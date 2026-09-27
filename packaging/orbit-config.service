@@ -1,0 +1,20 @@
+[Unit]
+Description=Orbit 星环启动器 Web 配置界面 (Orbit Web Config)
+Documentation=file:@PROJECT_DIR@/README.md
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+ExecStart=@PYTHON@ @PROJECT_DIR@/orbit-config.py --no-browser
+Environment=PYTHONUNBUFFERED=1
+Environment=ORBIT_CONFIG_HOST=127.0.0.1
+Environment=ORBIT_CONFIG_PORT=8787
+Restart=on-failure
+RestartSec=2
+# 只让本机访问，且不需要任何特权
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

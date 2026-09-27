@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星环配置器 · Orbit Launcher</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">󰖟</span>
+    <strong>星环配置器</strong>
+  </div>
+
+  <div class="path-chip" id="pathChip" title="当前生效的配置文件">
+    <span class="dot" id="pathDot"></span>
+    <span class="mono" id="pathText">读取中…</span>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab is-active" data-tab="items">菜单项</button>
+    <button class="tab" data-tab="search">搜索引擎</button>
+    <button class="tab" data-tab="presets">预设</button>
+    <button class="tab" data-tab="backups">备份</button>
+  </nav>
+
+  <div class="topbar-actions">
+    <span class="dirty-flag" id="dirtyFlag" hidden>未保存</span>
+    <button class="btn ghost icon" id="btnReload" title="丢弃未保存修改，重新从磁盘读取">󰍎</button>
+    <button class="btn ghost icon" id="btnImport" title="从 JSON / TOML 导入">󰇸</button>
+    <button class="btn ghost icon" id="btnExport" title="导出为 JSON">󰄅</button>
+    <button class="btn primary" id="btnSave" title="Ctrl+S">保存</button>
+  </div>
+</header>
+
+<div class="banner" id="banner" hidden></div>
+
+<main>
+  <!-- ══ 菜单项 ══ -->
+  <section class="tabpane is-active" data-pane="items">
+    <aside class="panel tree-panel">
+      <div class="panel-head">
+        <h2>星环菜单</h2>
+        <button class="icon-btn" id="btnAddTop" title="添加顶级菜单项">＋</button>
+      </div>
+      <div class="panel-search">
+        <input type="search" id="treeFilter" placeholder="过滤菜单项…" autocomplete="off">
+      </div>
+      <div class="tree" id="tree"></div>
+      <div class="tree-hint">拖动排序 · 悬停行上可加子项 / 删除</div>
+    </aside>
+
+    <div class="panel editor-panel">
+      <div class="panel-head">
+        <h2 id="editorTitle">编辑菜单项</h2>
+        <div class="head-actions">
+          <button class="btn small ghost" id="btnDupNode">复制</button>
+          <button class="btn small danger" id="btnDelNode">删除</button>
+        </div>
+      </div>
+      <div class="editor-body" id="editorBody"></div>
+    </div>
+
+    <aside class="panel preview-panel">
+      <div class="panel-head">
+        <h2>实时预览</h2>
+        <div class="seg small" id="previewScope">
+          <button class="is-active" data-scope="root">顶级</button>
+          <button data-scope="selected">选中项</button>
+        </div>
+      </div>
+      <div class="ring-stage" id="ringStage">
+        <div class="ring" id="ring"></div>
+        <div class="ring-hub" id="ringHub">
+          <span class="hub-icon">󰍉</span>
+          <span class="hub-text" id="hubText">Search or ask…</span>
+        </div>
+      </div>
+      <div class="preview-caption" id="previewCaption">—</div>
+    </aside>
+  </section>
+
+  <!-- ══ 搜索引擎 ══ -->
+  <section class="tabpane" data-pane="search">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>全局搜索设置</h2>
+      </div>
+      <div class="editor-body">
+        <div class="form-grid" id="searchMetaForm"></div>
+      </div>
+    </div>
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>搜索引擎 / AI 轮盘</h2>
+        <div class="head-actions">
+          <span class="muted small">Tab 键循环</span>
+          <button class="icon-btn" id="btnAddEngine" title="添加搜索引擎">＋</button>
+        </div>
+      </div>
+      <div class="engine-list" id="engineList"></div>
+    </div>
+  </section>
+
+  <!-- ══ 预设 ══ -->
+  <section class="tabpane" data-pane="presets">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>保存当前配置为预设</h2>
+      </div>
+      <div class="editor-body">
+        <div class="row-inline">
+          <input type="text" id="presetName" placeholder="预设名称，例如：工作 / 娱乐 / 极简">
+          <button class="btn primary" id="btnSavePreset">保存为新预设</button>
+          <button class="btn ghost" id="btnImportPresetFile">从文件导入预设…</button>
+          <input type="file" id="presetFileInput" accept=".json,application/json" hidden>
+        </div>
+        <p class="muted small">
+          存在 <span class="mono" id="presetDirLabel">～</span>
+          ·「载入并保存」会立刻写入 orbit 配置
+        </p>
+      </div>
+    </div>
+    <div class="panel wide">
+      <div class="panel-head"><h2>预设列表</h2></div>
+      <div class="preset-list" id="presetList"></div>
+    </div>
+  </section>
+
+  <!-- ══ 备份 ══ -->
+  <section class="tabpane" data-pane="backups">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h2>配置备份</h2>
+        <div class="head-actions">
+          <span class="muted small">保存前自动备份 · 最多 40 份</span>
+          <button class="btn small ghost" id="btnMakeBackup">立即备份</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>文件</th><th>时间</th><th>大小</th><th class="right">操作</th></tr></thead>
+          <tbody id="backupRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ══ 图标选择器 ══ -->
+<div class="modal" id="iconModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>选择图标</h2>
+      <button class="icon-btn" id="btnCloseIconModal">✕</button>
+    </div>
+    <div class="modal-tools">
+      <input type="search" id="iconSearch" placeholder="搜索图标名（英文，如 web / github / terminal）…" autocomplete="off">
+      <select id="iconCategory"></select>
+      <input type="text" id="iconManual" class="mono glyph-input" maxlength="4" placeholder="手输">
+      <button class="btn small ghost" id="btnUseManualIcon">用手输字符</button>
+    </div>
+    <div class="icon-grid" id="iconGrid"></div>
+    <div class="modal-foot muted small" id="iconFooter"></div>
+  </div>
+</div>
+
+<!-- ══ 导入 ══ -->
+<div class="modal" id="importModal" hidden>
+  <div class="modal-card narrow">
+    <div class="modal-head">
+      <h2>导入配置</h2>
+      <button class="icon-btn" id="btnCloseImportModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted small">
+        支持本工具导出的 JSON、orbit 原生 items 数组或整份 TOML。导入只载入编辑器，确认后再保存。
+      </p>
+      <div class="row-inline">
+        <button class="btn ghost" id="btnPickImportFile">选择文件…</button>
+        <input type="file" id="importFileInput" accept=".json,.toml,application/json,text/plain" hidden>
+        <span class="muted small" id="importFileName">未选择文件</span>
+      </div>
+      <textarea id="importText" rows="12" class="mono" placeholder="或直接粘贴 JSON / TOML…"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnCancelImport">取消</button>
+      <button class="btn primary" id="btnDoImport">导入到编辑器</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 通用确认对话框 ══ -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-card narrow">
+    <div class="modal-head"><h2 id="confirmTitle">确认</h2></div>
+    <div class="modal-body"><p id="confirmText"></p>
+      <label class="checkline" id="confirmCheckLine" hidden>
+        <input type="checkbox" id="confirmCheck"><span id="confirmCheckLabel"></span>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="btnConfirmCancel">取消</button>
+      <button class="btn danger" id="btnConfirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>

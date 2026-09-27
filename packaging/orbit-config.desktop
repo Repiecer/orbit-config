@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=星环配置器
+Name[en]=Orbit Web Config
+GenericName=Orbit 启动器配置
+Comment=用浏览器编辑 Orbit 星环启动器的菜单项与搜索引擎
+Comment[en]=Edit the Orbit launcher menu and search engines in your browser
+Exec=@PYTHON@ @PROJECT_DIR@/orbit-config.py
+Icon=@PROJECT_DIR@/web/favicon.svg
+Terminal=true
+Categories=Settings;DesktopSettings;
+Keywords=orbit;launcher;星环;启动器;配置;noctalia;niri;
+StartupNotify=false
